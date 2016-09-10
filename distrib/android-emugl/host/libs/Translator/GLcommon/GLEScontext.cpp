@@ -648,7 +648,7 @@ void GLEScontext::buildStrings(const char* baseVendor,
         const char* baseRenderer, const char* baseVersion, const char* version)
 {
     static const char VENDOR[]   = {"Google ("};
-    static const char RENDERER[] = {"Android Emulator OpenGL ES Translator ("};
+    static const char RENDERER[] = {"Remix OS Player OpenGL ES Translator ("};
     const size_t VENDOR_LEN   = sizeof(VENDOR) - 1;
     const size_t RENDERER_LEN = sizeof(RENDERER) - 1;
 

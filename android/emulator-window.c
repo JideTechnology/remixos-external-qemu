@@ -53,7 +53,8 @@ static void write_window_name(char* buff,
                               size_t buff_len,
                               int base_port,
                               const char* avd_name) {
-    snprintf(buff, buff_len, "%d:%s", base_port, avd_name);
+    // @jide
+    snprintf(buff, buff_len, "Remix OS Player");
 }
 
 
@@ -82,9 +83,9 @@ static void emulator_window_keycodes_event(int* keycodes, int count) {
     user_event_agent->sendKeyCodes(keycodes, count);
 }
 
-static void emulator_window_window_mouse_event(unsigned x,
-                                         unsigned y,
-                                         unsigned state) {
+static void emulator_window_window_mouse_event(int x,
+                                         int y,
+                                         int state) {
     /* NOTE: the 0 is used in hw/android/goldfish/events_device.c to
      * differentiate between a touch-screen and a trackball event
      */

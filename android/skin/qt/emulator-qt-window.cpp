@@ -55,6 +55,7 @@
 #if DEBUG
 #include "android/utils/debug.h"
 #define  D(...)   VERBOSE_PRINT(surface,__VA_ARGS__)
+#define  DE(...)   VERBOSE_PRINT(keys,__VA_ARGS__)
 #else
 #define  D(...)   ((void)0)
 #endif
@@ -187,6 +188,16 @@ EmulatorQtWindow::EmulatorQtWindow(QWidget *parent) :
             am->user_actions = user_actions->count();
         }
     });
+
+
+    if (mMouseGrabbed) {
+        setMouseTracking(true);
+    }
+    mWheelScrollTimer.setInterval(100);
+    mWheelScrollTimer.setSingleShot(true);
+    connect(&mWheelScrollTimer, SIGNAL(timeout()), this,
+            SLOT(wheelScrollTimeout()));
+
 }
 
 EmulatorQtWindow::Ptr EmulatorQtWindow::getInstancePtr()
@@ -299,7 +310,7 @@ void EmulatorQtWindow::slot_startupTick() {
     // window still hasn't appeared.
     // Show a pop-up that lets the user know we are working.
 
-    mStartupDialog.setWindowTitle(tr("Android Emulator"));
+    mStartupDialog.setWindowTitle(tr("Remix OS Player"));
     // Hide close/minimize/maximize buttons
     mStartupDialog.setWindowFlags(Qt::Dialog |
                                   Qt::CustomizeWindowHint |
@@ -409,8 +420,13 @@ void EmulatorQtWindow::dropEvent(QDropEvent *event)
     }
 }
 
-void EmulatorQtWindow::keyPressEvent(QKeyEvent *event)
-{
+void EmulatorQtWindow::keyPressEvent(QKeyEvent* event) {
+    Qt::KeyboardModifiers modifiers = event->modifiers();
+    if ((modifiers & Qt::AltModifier) && (modifiers & Qt::ControlModifier)) {
+        mMouseGrabbed = false;
+        unsetCursor();
+        setMouseTracking(false);
+    }
     handleKeyEvent(kEventKeyDown, event);
 }
 
@@ -425,18 +441,63 @@ void EmulatorQtWindow::keyReleaseEvent(QKeyEvent *event)
     if ( trackballActive != hasMouseTracking() ) {
         setMouseTracking(trackballActive);
     }
-}
-void EmulatorQtWindow::mouseMoveEvent(QMouseEvent *event)
-{
-    handleMouseEvent(kEventMouseMotion,
-                     getSkinMouseButton(event),
-                     event->pos());
+
+    if (mMouseGrabbed) {
+        setMouseTracking(true);
+    }
 }
 
-void EmulatorQtWindow::mousePressEvent(QMouseEvent *event)
-{
-    handleMouseEvent(kEventMouseButtonDown,
-                     getSkinMouseButton(event),
+void EmulatorQtWindow::grabMouseIfNeccessary(QMouseEvent* event) {
+    int MOUSE_LOCK_ZONE_WIDTH = 100;
+    if (mMouseGrabbed) {
+        if (!mMouseGrabWarning) {
+            QMessageBox msgbox(this);
+            msgbox.setWindowTitle(tr("Tips"));
+            msgbox.setText(tr("<p>Press \"Ctrl+Alt\" to move the mouse cursor out of Remix OS Player</p>"));
+            msgbox.exec();
+            mMouseGrabWarning = true;
+        }
+        QRect widgetRect = geometry();
+        widgetRect.moveTopLeft(parentWidget()->mapToGlobal(widgetRect.topLeft()));
+
+        QPoint pos;
+        if (event != NULL) {
+            pos = event->pos();
+        } else {
+            pos = QCursor::pos();
+        }
+        if (pos.x() < MOUSE_LOCK_ZONE_WIDTH) {
+            QCursor::setPos(widgetRect.left() + MOUSE_LOCK_ZONE_WIDTH, QCursor::pos().y());
+        }
+        if (pos.x() > widgetRect.width() - MOUSE_LOCK_ZONE_WIDTH) {
+            QCursor::setPos(widgetRect.right() - MOUSE_LOCK_ZONE_WIDTH, QCursor::pos().y());
+        }
+        if (pos.y() < MOUSE_LOCK_ZONE_WIDTH) {
+            QCursor::setPos(QCursor::pos().x(), widgetRect.top() + MOUSE_LOCK_ZONE_WIDTH);
+        }
+        if (pos.y() > widgetRect.height() - MOUSE_LOCK_ZONE_WIDTH) {
+            QCursor::setPos(QCursor::pos().x(), widgetRect.bottom() - MOUSE_LOCK_ZONE_WIDTH);
+        }
+        mPrevMousePosition = QPoint(
+                QCursor::pos().x() - widgetRect.left(),
+                QCursor::pos().y() - widgetRect.top());
+    }
+}
+
+void EmulatorQtWindow::mouseMoveEvent(QMouseEvent* event) {
+    handleMouseEvent(kEventMouseMotion, getSkinMouseButton(event),
+            event->pos());
+    grabMouseIfNeccessary(event);
+}
+
+void EmulatorQtWindow::mousePressEvent(QMouseEvent* event) {
+    setMouseTracking(true);
+    setCursor(Qt::BlankCursor);
+    if (!mMouseGrabbed) {
+        mMouseGrabbed = true;
+        return;
+    }
+    handleMouseEvent(kEventMouseButtonDown, getSkinMouseButton(event),
                      event->pos());
 }
 
@@ -835,7 +896,7 @@ void EmulatorQtWindow::slot_showWindow(SkinSurface* surface, const QRect* rect, 
     if (mFirstShowEvent) {
         showAvdArchWarning();
         showGpuWarning();
-    }
+    } 
     mFirstShowEvent = false;
 
     if (semaphore != NULL) semaphore->release();
@@ -1009,25 +1070,53 @@ static int convertKeyCode(int sym)
         K1(X),
         K1(Y),
         K1(Z),
+        KK(Exclam, 1),
+        KK(At, 2),
+        KK(NumberSign, 3),
+        KK(Dollar, 4),
+        KK(Percent, 5),
+        KK(AsciiCircum, 6),
+        KK(Ampersand, 7),
+        KK(Asterisk, 8),
+        KK(ParenLeft, 9),
+        KK(ParenRight, 0),
+        KK(QuoteLeft, GRAVE),
+        KK(AsciiTilde, GRAVE),
         KK(Minus, MINUS),
+        KK(Underscore, MINUS),
         KK(Equal, EQUAL),
+        KK(Plus, EQUAL),
         KK(Backspace, BACKSPACE),
+        KK(Delete, DELETE),
         KK(Home, HOME),
         KK(Escape, ESC),
         KK(Comma, COMMA),
-        KK(Period,DOT),
+        KK(Less, COMMA),
+        KK(Period, DOT),
+        KK(Greater, DOT),
         KK(Space, SPACE),
         KK(Slash, SLASH),
+        KK(Question, SLASH),
         KK(Return,ENTER),
         KK(Tab, TAB),
         KK(BracketLeft, LEFTBRACE),
         KK(BracketRight, RIGHTBRACE),
         KK(Backslash, BACKSLASH),
+        KK(Bar, BACKSLASH),
+        KK(BraceLeft, LEFTBRACE),
+        KK(BraceRight, RIGHTBRACE),
         KK(Semicolon, SEMICOLON),
+        KK(Colon, SEMICOLON),
         KK(Apostrophe, APOSTROPHE),
+        KK(QuoteDbl, APOSTROPHE),
+        KK(Control, LEFTCTRL),
+        KK(Alt, LEFTALT),
+        KK(Shift, LEFTSHIFT),
+        KK(CapsLock, CAPSLOCK),
     };
     const size_t kConvertSize = sizeof(kConvert) / sizeof(kConvert[0]);
     size_t nn;
+
     for (nn = 0; nn < kConvertSize; ++nn) {
         if (sym == kConvert[nn].qt_sym) {
             return kConvert[nn].keycode;
@@ -1077,9 +1166,11 @@ void EmulatorQtWindow::doResize(const QSize& size,
     }
 }
 
-SkinMouseButtonType EmulatorQtWindow::getSkinMouseButton(QMouseEvent *event) const
-{
-    return (event->button() == Qt::RightButton) ? kMouseButtonRight : kMouseButtonLeft;
+SkinMouseButtonType EmulatorQtWindow::getSkinMouseButton(
+        QMouseEvent* event) const {
+    if (event->button() == Qt::NoButton) return kMouseNoButton;
+    return (event->button() == Qt::RightButton) ? kMouseButtonRight
+                                                : kMouseButtonLeft;
 }
 
 void EmulatorQtWindow::handleMouseEvent(SkinEventType type, SkinMouseButtonType button, const QPoint &pos)
@@ -1099,6 +1190,7 @@ void EmulatorQtWindow::handleMouseEvent(SkinEventType type, SkinMouseButtonType 
 void EmulatorQtWindow::forwardKeyEventToEmulator(SkinEventType type, QKeyEvent* event) {
     SkinEvent* skin_event = createSkinEvent(type);
     SkinEventKeyData& keyData = skin_event->u.key;
+    DE("------ event key %d %x", event->key(), event->key());
     keyData.keycode = convertKeyCode(event->key());
 
     Qt::KeyboardModifiers modifiers = event->modifiers();
@@ -1131,26 +1223,31 @@ void EmulatorQtWindow::handleKeyEvent(SkinEventType type, QKeyEvent *event)
         }
     }
 
-    if (mForwardShortcutsToDevice || !mToolWindow->handleQtKeyEvent(event)) {
-        forwardKeyEventToEmulator(type, event);
-
-        if (type == kEventKeyDown && event->text().length() > 0) {
-            Qt::KeyboardModifiers mods = event->modifiers();
-            mods &= ~(Qt::ShiftModifier | Qt::KeypadModifier);
-            if (mods == 0) {
-                // The key event generated text without Ctrl, Alt, etc.
-                // Send an additional TextInput event to the emulator.
-                SkinEvent *skin_event = createSkinEvent(kEventTextInput);
-                skin_event->u.text.down = false;
-                strncpy((char*)skin_event->u.text.text,
-                        (const char*)event->text().toUtf8().constData(),
-                        sizeof(skin_event->u.text.text) - 1);
-                // Ensure the event's text is 0-terminated
-                skin_event->u.text.text[sizeof(skin_event->u.text.text)-1] = 0;
-                queueEvent(skin_event);
-            }
-        }
+    if (mForwardShortcutsToDevice) {
+         forwardKeyEventToEmulator(type, event);
     }
+    // region @jide send key event directly to android without filtering hot keys
+    // if (mForwardShortcutsToDevice || !mToolWindow->handleQtKeyEvent(event)) {
+        // forwardKeyEventToEmulator(type, event);
+
+        // if (type == kEventKeyDown && event->text().length() > 0) {
+        //     Qt::KeyboardModifiers mods = event->modifiers();
+        //     mods &= ~(Qt::ShiftModifier | Qt::KeypadModifier);
+        //     if (mods == 0) {
+        //         // The key event generated text without Ctrl, Alt, etc.
+        //         // Send an additional TextInput event to the emulator.
+        //         SkinEvent *skin_event = createSkinEvent(kEventTextInput);
+        //         skin_event->u.text.down = false;
+        //         strncpy((char*)skin_event->u.text.text,
+        //                 (const char*)event->text().toUtf8().constData(),
+        //                 sizeof(skin_event->u.text.text) - 1);
+        //         // Ensure the event's text is 0-terminated
+        //         skin_event->u.text.text[sizeof(skin_event->u.text.text)-1] = 0;
+        //         queueEvent(skin_event);
+        //     }
+        // }
+    // }
+    // endregion
 }
 
 void EmulatorQtWindow::simulateKeyPress(int keyCode, int modifiers)
@@ -1402,4 +1499,25 @@ bool EmulatorQtWindow::mouseInside() {
            widget_cursor_coords.x() < width() &&
            widget_cursor_coords.y() >= 0 &&
            widget_cursor_coords.y() < height();
+           widget_cursor_coords.y() >= 0 && widget_cursor_coords.y() < height();
+}
+
+void EmulatorQtWindow::wheelEvent(QWheelEvent* event) {
+    if (!mWheelScrollTimer.isActive()) {
+        if (event->delta() > 0) {
+          handleMouseEvent(kEventMouseButtonDown, kMouseButtonWheelUp, event->pos());
+          handleMouseEvent(kEventMouseButtonUp, kMouseButtonWheelUp, event->pos());
+        } else {
+          handleMouseEvent(kEventMouseButtonDown, kMouseButtonWheelDown, event->pos());
+          handleMouseEvent(kEventMouseButtonUp, kMouseButtonWheelDown, event->pos());
+        }
+        //mWheelScrollPos = event->pos();
+    }
+
+    mWheelScrollTimer.start();
+    // mWheelScrollPos.setY(mWheelScrollPos.y() + event->delta() / 8);
+}
+
+void EmulatorQtWindow::wheelScrollTimeout() {
+    //handleMouseEvent(kEventMouseButtonUp, kMouseButtonWheel, mWheelScrollPos);
 }

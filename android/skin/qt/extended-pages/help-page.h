@@ -29,9 +29,11 @@ private slots:
     void on_help_docs_clicked();
     void on_help_fileBug_clicked();
     void on_help_sendFeedback_clicked();
+    void on_help_checkForum_clicked();
 
 private:
     void initializeLicenseText();
+    void initializeFeedback();
     void initializeKeyboardShortcutList(const ShortcutKeyStore<QtUICommand>* key_store);
 
     std::unique_ptr<Ui::HelpPage> mUi;

@@ -230,7 +230,7 @@ void android_getOpenglesHardwareStrings(char** vendor,
     /* Special case for the default ES to GL translators: extract the strings
      * of the underlying OpenGL implementation. */
     if (strncmp(vendorSrc, "Google", 6) == 0 &&
-            strncmp(rendererSrc, "Android Emulator OpenGL ES Translator", 37) == 0) {
+            strncmp(rendererSrc, "Remix OS Player Emulator OpenGL ES Translator", 37) == 0) {
         *vendor = strdupBaseString(vendorSrc);
         *renderer = strdupBaseString(rendererSrc);
         *version = strdupBaseString(versionSrc);

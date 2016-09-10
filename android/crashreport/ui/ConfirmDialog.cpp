@@ -25,11 +25,11 @@
 #include <QSettings>
 #include "QtConcurrent/qtconcurrentrun.h"
 
-static const char kMessageBoxTitle[] = "Android Emulator";
+static const char kMessageBoxTitle[] = "Remix OS Player";
 static const char kMessageBoxMessageInternalError[] =
-        "<p>Android Emulator closed because of an internal error:</p>";
+        "<p>Remix OS Player closed because of an internal error:</p>";
 static const char kMessageBoxMessage[] =
-        "<p>Android Emulator closed unexpectedly.</p>";
+        "<p>Remix OS Player closed unexpectedly.</p>";
 static const char kMessageBoxMessageFooter[] =
         "<p>Do you want to send a crash report about the problem?</p>";
 static const char kMessageBoxMessageDetailHW[] =

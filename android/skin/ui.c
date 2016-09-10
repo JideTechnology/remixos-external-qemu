@@ -439,7 +439,10 @@ bool skin_ui_process_events(SkinUI* ui) {
                ev.u.mouse.x, ev.u.mouse.y, ev.u.mouse.xrel, ev.u.mouse.yrel,
                ev.u.mouse.button);
             if (ev.u.mouse.button == kMouseButtonLeft ||
-                ev.u.mouse.button == kMouseButtonSecondaryTouch) {
+                ev.u.mouse.button == kMouseButtonSecondaryTouch ||
+                ev.u.mouse.button == kMouseButtonRight ||
+                ev.u.mouse.button == kMouseButtonWheelUp ||
+                ev.u.mouse.button == kMouseButtonWheelDown ) {
                 skin_window_process_event(ui->window, &ev);
             }
             break;

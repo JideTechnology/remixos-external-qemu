@@ -35,6 +35,8 @@
 #define  LCD_BRIGHTNESS_DEFAULT  128
 #define  LCD_BRIGHTNESS_MAX      255
 
+#define  D(...)    VERBOSE_PRINT(adb,__VA_ARGS__)
+
 typedef struct Background {
     SkinImage*   image;
     SkinRect     rect;
@@ -1054,9 +1056,9 @@ struct SkinWindow {
 
 static void
 add_finger_event(SkinWindow* window,
-                 unsigned x,
-                 unsigned y,
-                 unsigned state)
+                 int x,
+                 int y,
+                 int state)
 {
     //fprintf(stderr, "::: finger %d,%d %d\n", x, y, state);
 
@@ -1869,18 +1871,52 @@ skin_window_map_to_scale( SkinWindow*  window, int  *x, int  *y )
     skin_surface_reverse_map(window->surface, x, y);
 }
 
+static void
+skin_window_map_to_scale_for_rel( SkinWindow*  window, int  *x, int  *y )
+{
+    int oldx = *x;
+    int oldy = *y;
+    skin_surface_reverse_map(window->surface, x, y);
+    if (oldx != 0 && *x == 0) {
+        *x = oldx > 0 ? 1 : -1;
+    }
+    if (oldy != 0 && *y == 0) {
+        *y = oldy > 0 ? 1 : -1;
+    }
+}
+
 void
 skin_window_process_event(SkinWindow*  window, SkinEvent* ev)
 {
     Button*  button;
     int      mx, my;
+    int      xrel, yrel;
 
     FingerState*    finger;
 
     // The "button state" contains two flags: the lowest order bit indicates whether or not this is
     // a press (1) or release (0) event, and the second bit indicates if this is the primary (0) or
     // secondary (1) finger.
-    unsigned        button_state = (ev->type == kEventMouseButtonUp ? 0 : 1);
+    unsigned        button_state = (ev->type != kEventMouseButtonUp && ev->u.mouse.button != kMouseNoButton ? 1 : 0);
+    button_state |= ev->u.mouse.button == kMouseButtonRight ? 4 : 0;
+    if (ev->u.mouse.button == kMouseButtonWheelUp) {
+        button_state = 8; // 1001
+        if (ev->type == kEventMouseButtonDown) {
+            button_state |= 1;
+        }
+    }
+
+    if (ev->u.mouse.button == kMouseButtonWheelDown) {
+        button_state = 16; // 10001
+        if (ev->type == kEventMouseButtonDown) {
+            button_state |= 1;
+        }
+    }
+
+    if (window->finger.tracking == 1 && ev->u.mouse.button == kMouseNoButton ) {
+        button_state |= 1;
+    }
+
     if (ev->u.mouse.button == kMouseButtonLeft) {
         finger = &window->finger;
     } else {
@@ -1897,10 +1933,20 @@ skin_window_process_event(SkinWindow*  window, SkinEvent* ev)
             skin_window_trackball_press( window, 1 );
             break;
         }
+        if (button_state & 8 || button_state & 16) {
+             add_finger_event(window,
+                              0,
+                              0,
+                              button_state);
+             break;
+        }
 
         mx = ev->u.mouse.x;
         my = ev->u.mouse.y;
         skin_window_map_to_scale( window, &mx, &my );
+        xrel = ev->u.mouse.xrel;
+        yrel = ev->u.mouse.yrel;
+        skin_window_map_to_scale_for_rel( window, &xrel, &yrel );
         skin_window_move_mouse( window, finger, mx, my );
         skin_window_find_finger( window, finger, mx, my );
 #if 0
@@ -1910,10 +1956,10 @@ skin_window_process_event(SkinWindow*  window, SkinEvent* ev)
 #endif
         if (finger->inside) {
             finger->tracking = 1;
-            add_finger_event(window,
-                             finger->pos.x,
-                             finger->pos.y,
-                             button_state);
+             add_finger_event(window,
+                              xrel,
+                              yrel,
+                              button_state);
         } else {
             window->button.pressed = NULL;
             button = window->button.hover;
@@ -1933,10 +1979,21 @@ skin_window_process_event(SkinWindow*  window, SkinEvent* ev)
             skin_window_trackball_press( window, 0 );
             break;
         }
+        
+        if (button_state & 8 || button_state & 16) {
+             add_finger_event(window,
+                              0,
+                              0,
+                              button_state);
+             break;
+        }
         button = window->button.pressed;
         mx = ev->u.mouse.x;
         my = ev->u.mouse.y;
         skin_window_map_to_scale( window, &mx, &my );
+        xrel = ev->u.mouse.xrel;
+        yrel = ev->u.mouse.yrel;
+        skin_window_map_to_scale_for_rel( window, &xrel, &yrel );
         if (button)
         {
             button->down = 0;
@@ -1953,8 +2010,8 @@ skin_window_process_event(SkinWindow*  window, SkinEvent* ev)
             skin_window_move_mouse( window, finger, mx, my );
             finger->tracking = 0;
             add_finger_event(window,
-                             finger->pos.x,
-                             finger->pos.y,
+                             xrel,
+                             yrel,
                              button_state);
         }
         break;
@@ -1969,16 +2026,25 @@ skin_window_process_event(SkinWindow*  window, SkinEvent* ev)
         mx = ev->u.mouse.x;
         my = ev->u.mouse.y;
         skin_window_map_to_scale( window, &mx, &my );
-        if ( !window->button.pressed )
-        {
+        xrel = ev->u.mouse.xrel;
+        yrel = ev->u.mouse.yrel;
+        skin_window_map_to_scale_for_rel( window, &xrel, &yrel );
+        // if ( !window->button.pressed )
+        // {
+            bool is_tracking = finger->tracking == 1;
+            finger->tracking = 1;
             skin_window_move_mouse( window, finger, mx, my );
             if ( finger->tracking ) {
                 add_finger_event(window,
-                                 finger->pos.x,
-                                 finger->pos.y,
+                                 xrel,
+                                 yrel,
                                  button_state);
             }
-        }
+            
+            if (!is_tracking) {
+                finger->tracking = 0;
+            }
+        // }
         break;
 
     case kEventScreenChanged:

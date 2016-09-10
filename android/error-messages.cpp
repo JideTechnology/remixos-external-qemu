@@ -69,11 +69,11 @@ const char* const kHaxVcpuSyncFailed =
         "https://www.virtualbox.org/ticket/14294 (VirtualBox)";
 
 const char* const kUnknownInitError =
-        "An unknown error occured when starting Android Emulator. Please "
+        "An unknown error occured when starting Remix OS Player. Please "
         "consider filing a bug report describing what happened";
 
 const char* const kNotEnoughMemForGuestError =
-        "Android Emulator could not allocate %.1f GB "
+        "Remix OS Player could not allocate %.1f GB "
         "of memory for the current AVD configuration. "
         "Consider adjusting the RAM size of your AVD "
         "in the AVD Manager.\n\n"

@@ -99,7 +99,7 @@ typedef enum {
     kKeyCodeEnvelope                = KEY_MAIL,
     kKeyCodeNewline                 = KEY_ENTER,
     kKeyCodeDel                     = KEY_BACKSPACE,
-    kKeyCodeGrave                   = 399,
+    kKeyCodeGrave                   = KEY_GRAVE,
     kKeyCodeMinus                   = KEY_MINUS,
     kKeyCodeEquals                  = KEY_EQUAL,
     kKeyCodeLeftBracket             = KEY_LEFTBRACE,

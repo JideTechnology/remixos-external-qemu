@@ -307,7 +307,7 @@ AndroidCpuAcceleration ProbeHaxCpu(String* status) {
     if (android_get_x86_cpuid_vendor_id_is_vmhost(vendor_id)) {
 
         StringAppendFormat(status,
-                           "Android Emulator does not support nested virtualization.  "
+                           "Remix OS Player does not support nested virtualization.  "
                            "Your CPU: '%s'",
                            vendor_id);
         return ANDROID_CPU_ACCELERATION_NESTED_NOT_SUPPORTED;
@@ -316,7 +316,7 @@ AndroidCpuAcceleration ProbeHaxCpu(String* status) {
     /* HAXM only supports GenuineIntel processors */
     if (android_get_x86_cpuid_vendor_id_type(vendor_id) != VENDOR_ID_INTEL) {
         StringAppendFormat(status,
-                           "Android Emulator requires an Intel processor with "
+                           "Remix OS Player requires an Intel processor with "
                            "VT-x and NX support.  Your CPU: '%s'",
                            vendor_id);
         return ANDROID_CPU_ACCELERATION_NO_CPU_SUPPORT;
@@ -327,27 +327,27 @@ AndroidCpuAcceleration ProbeHaxCpu(String* status) {
 #ifdef _WIN32
             // The vcpu bit is set but your vendor id is not one of the known VM ids
             // You are probably running under Hyper-V
-            status->assign("Please disable Hyper-V before using the Android Emulator.  "
+            status->assign("Please disable Hyper-V before using the Remix OS Player.  "
                            "Start a command prompt as Administrator, run 'bcdedit /set "
                            "hypervisorlaunchtype off', reboot.");
             return ANDROID_CPU_ACCELERATION_HYPERV_ENABLED;
 #else // OSX
             StringAppendFormat(status,
-                               "Android Emulator does not support nested virtualization.  "
+                               "Remix OS Player does not support nested virtualization.  "
                                "Your CPU: '%s'",
                                vendor_id);
             return ANDROID_CPU_ACCELERATION_NESTED_NOT_SUPPORTED;
 #endif
         }
         status->assign(
-            "Android Emulator requires an Intel processor with VT-x and NX support.  "
+            "Remix OS Player requires an Intel processor with VT-x and NX support.  "
             "(VT-x is not supported)");
         return ANDROID_CPU_ACCELERATION_NO_CPU_VTX_SUPPORT;
     }
 
     if (!android_get_x86_cpuid_nx_support()) {
         status->assign(
-            "Android Emulator requires an Intel processor with VT-x and NX support.  "
+            "Remix OS Player requires an Intel processor with VT-x and NX support.  "
             "(NX is not supported)");
         return ANDROID_CPU_ACCELERATION_NO_CPU_NX_SUPPORT;
     }

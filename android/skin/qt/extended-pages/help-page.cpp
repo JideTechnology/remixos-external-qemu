@@ -27,7 +27,11 @@ const QString DOCS_URL =
 const QString FILE_BUG_URL =
     "https://code.google.com/p/android/issues/entry?template=Android%20Emulator%20Bug";
 const QString SEND_FEEDBACK_URL =
-    "https://code.google.com/p/android/issues/entry?template=Emulator%20Feature%20Request";
+    "https://docs.google.com/forms/u/0/d/10GE38O5v_DE2Uu6MZuak-lFECr00vlB1NoHfkI6IKpk";
+const QString CHECK_FORUM_URL =
+    "http://forum.xda-developers.com/remix/remixos-player";
+const QString LICENSE_URL =
+   "https://android.googlesource.com/platform/external/qemu/+/emu-master-dev/";
 
 static QString apiVersionString(int apiVersion)
 {
@@ -94,71 +98,20 @@ HelpPage::HelpPage(QWidget *parent) :
 
 void HelpPage::initialize(const ShortcutKeyStore<QtUICommand>* key_store) {
     initializeLicenseText();
-    initializeKeyboardShortcutList(key_store);
+    initializeFeedback();
 }
 
 void HelpPage::initializeLicenseText() {
-    // Read the license text into the display box
-    // The file is <SDK path>/tools/NOTICE.txt
-
-    QString lFileName = android::base::System::get()->getLauncherDirectory().c_str();
-    lFileName += "/NOTICE.txt";
-
-    QFile licenseFile(lFileName);
-    if (licenseFile.open(QIODevice::ReadOnly)) {
-        // Read the file into the text box
-        QTextStream lText(&licenseFile);
-        mUi->help_licenseText->setPlainText(lText.readAll());
-    } else {
-        // Can't read the file. Give a backup notice.
-        mUi->help_licenseText->setPlainText(
-                tr("Find Android Emulator License NOTICE files here:") +
-                "\n\nhttps://android.googlesource.com/platform/external/"
-                          "qemu/+/emu-master-dev/");
-    }
+  mUi->help_licenseText->setText(LICENSE_URL);
+  mUi->help_licenseText->setTextInteractionFlags(Qt::TextSelectableByMouse);
 }
 
-static void addShortcutsTableRow(QTableWidget* table_widget,
-                                 const QString& key_sequence,
-                                 const QString& description) {
-    int table_row = table_widget->rowCount();
-    table_widget->insertRow(table_row);
-    table_widget->setItem(table_row, 0, new QTableWidgetItem(description));
-    table_widget->setItem(table_row, 1, new QTableWidgetItem(key_sequence));
-}
+void HelpPage::initializeFeedback() {
+    mUi->help_docs->setVisible(false);
+    mUi->help_fileBug->setVisible(false);
 
-void HelpPage::initializeKeyboardShortcutList(const ShortcutKeyStore<QtUICommand>* key_store)
-{
-    QTableWidget* table_widget = mUi->shortcutsTableWidget;
-    if (key_store) {
-        for (auto key_sequence_and_command = key_store->begin();
-             key_sequence_and_command != key_store->end();
-             ++key_sequence_and_command) {
-            QString key_combo;
-
-            // Unfortunately, QKeySequence doesn't handle modifier-only key
-            // sequences very well. In this case, "multitouch" is Ctrl and
-            // QKeySequence::toString sometimes produces strings with weird
-            // characters. To mitigate this problem, we simply hardcode the
-            // string for the "multitouch" key combo.
-            if (key_sequence_and_command.value() ==
-                       QtUICommand::SHOW_MULTITOUCH) {
-#ifdef Q_OS_MAC
-                key_combo = "\u2318";  // Cmd
-#else
-                key_combo = "Ctrl";
-#endif
-            } else {
-                key_combo  = key_sequence_and_command.key().toString(QKeySequence::NativeText);
-            }
-
-            addShortcutsTableRow(table_widget,
-                                 key_combo,
-                                 getQtUICommandDescription(key_sequence_and_command.value()));
-        }
-    }
-
-    table_widget->sortItems(0);
+    mUi->help_sendFeedback->setText(SEND_FEEDBACK_URL);
+    mUi->help_checkForum->setText(CHECK_FORUM_URL);
 }
 
 void HelpPage::on_help_docs_clicked() {
@@ -171,6 +124,10 @@ void HelpPage::on_help_fileBug_clicked() {
 
 void HelpPage::on_help_sendFeedback_clicked() {
     QDesktopServices::openUrl(QUrl(SEND_FEEDBACK_URL));
+}
+
+void HelpPage::on_help_checkForum_clicked() {
+    QDesktopServices::openUrl(QUrl(CHECK_FORUM_URL));
 }
 
 void LatestVersionLoadTask::run() {

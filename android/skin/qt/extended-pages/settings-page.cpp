@@ -70,7 +70,7 @@ SettingsPage::SettingsPage(QWidget *parent) :
 
     // "Send keyboard shortcuts": a pull-down that acts like a checkbox
     bool shortcutBool = settings.value(
-               Ui::Settings::FORWARD_SHORTCUTS_TO_DEVICE, false).toBool();
+               Ui::Settings::FORWARD_SHORTCUTS_TO_DEVICE, true).toBool();
 
     mUi->set_forwardShortcutsToDevice->setCurrentIndex( shortcutBool ? 1 : 0 );
 

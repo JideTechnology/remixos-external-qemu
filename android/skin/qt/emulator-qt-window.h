@@ -193,6 +193,8 @@ private slots:
     void slot_gpuWarningMessageAccepted();
 
     void slot_showProcessErrorDialog(QProcess::ProcessError exitStatus);
+    void wheelEvent(QWheelEvent* event);
+    void wheelScrollTimeout();
 
     /*
      Here are conventional slots that perform interesting high-level functions in the emulator. These can be hooked up to signals
@@ -258,8 +260,12 @@ private:
     QMessageBox mGpuWarningBox;
     bool mFirstShowEvent;
 
+    QTimer mWheelScrollTimer;
     EventCapturer mEventCapturer;
     std::shared_ptr<android::qt::UserActionsCounter> mUserActionsCounter;
+    bool mMouseGrabbed;
+    bool mMouseGrabWarning;
+    void grabMouseIfNeccessary(QMouseEvent*);
 };
 
 struct SkinSurface {

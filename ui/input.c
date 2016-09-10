@@ -27,6 +27,9 @@
 #include "monitor/monitor.h"
 #include "ui/console.h"
 #include "qapi/qmp/qjson.h"
+#include "android/utils/debug.h"
+
+#define  D(...)    VERBOSE_PRINT(adb,__VA_ARGS__)
 
 #ifdef CONFIG_SKINNING
 QEMUPutMouseEntry *original_qemu_add_mouse_event_handler(QEMUPutMouseEvent *func,
@@ -183,6 +186,7 @@ void kbd_mouse_event(int dx, int dy, int dz, int buttons_state)
     mouse_event = entry->qemu_put_mouse_event;
     mouse_event_opaque = entry->qemu_put_mouse_event_opaque;
 
+    D("kbd_mouse_event %d", buttons_state);
     if (mouse_event) {
 #ifndef CONFIG_SKINNING
         if (graphic_rotate) {

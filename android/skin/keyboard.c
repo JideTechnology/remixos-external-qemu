@@ -204,7 +204,13 @@ skin_keyboard_process_event(SkinKeyboard*  kb, SkinEvent* ev, int  down)
     } else if (ev->type == kEventKeyDown || ev->type == kEventKeyUp) {
         int keycode = ev->u.key.keycode;
         int mod = ev->u.key.mod;
-
+        // region @jide send key event directly to android
+        if (keycode > 0) {
+            skin_keyboard_do_key_event(kb, keycode, down);
+            skin_keyboard_flush(kb);
+            return;
+        }
+        // endregion
         /* first, try the keyboard-mode-independent keys */
         int code = skin_keyboard_key_to_code(kb, keycode, mod, down);
         if (code == 0) {

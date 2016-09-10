@@ -1721,7 +1721,7 @@ android_help_list_options( stralloc_t*  out )
 void
 android_help_main( stralloc_t*  out )
 {
-    stralloc_add_str(out, "Android Emulator usage: emulator [options] [-qemu args]\n");
+    stralloc_add_str(out, "Remix OS Player usage: emulator [options] [-qemu args]\n");
     stralloc_add_str(out, "  options:\n" );
 
     android_help_list_options(out);
